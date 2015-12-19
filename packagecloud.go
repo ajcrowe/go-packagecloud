@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 )
@@ -31,13 +33,26 @@ func NewClient(token string) (*Client, error) {
 	}, nil
 }
 
+// wrapper function for http.NewRequest to add access token
+func (c *Client) NewRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, urlStr, body)
+	req.SetBasicAuth(c.Token, "")
+	return req, err
+}
+
 func (c *Client) do(req *http.Request, status int, v interface{}) (*http.Response, error) {
+	dump, err := httputil.DumpRequest(req, true)
+	fmt.Println(string(dump))
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return resp, err
 	}
 
 	defer resp.Body.Close()
+
+	dump, err = httputil.DumpResponse(resp, true)
+	fmt.Println(string(dump))
 
 	// check status code is what is expected
 	if resp.StatusCode != status {

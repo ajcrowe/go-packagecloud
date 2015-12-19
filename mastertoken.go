@@ -4,7 +4,10 @@
 package packagecloud
 
 import (
-	"log"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -13,27 +16,34 @@ type MasterToken struct {
 	Name string `json:"name"`
 
 	// Value of this token as an alphanumeric string
-	Value string `json:"value"`
+	Value string `json:"value,omitempty"`
 
 	// array of read tokens accociated with this master token
-	ReadTokens []ReadToken `json:"read_tokens"`
+	ReadTokens []ReadToken `json:"read_tokens,omitempty"`
 
 	// path[self] the uri including the id of the master token
 	// this is required when deleting a token
 	Paths struct {
-		Self string `json:"self"`
-	} `json:"paths"`
+		Self string `json:"self,omitempty"`
+	} `json:"paths,omitempty"`
+}
+
+type MasterTokenRequest struct {
+	MasterToken NewMasterToken `json:"master_token"`
+}
+
+type NewMasterToken struct {
+	Name string `json:"name"`
 }
 
 // ListMasterTokens returns a slice of pointer to MasterToken structs
 func (c *Client) ListMasterTokens(user, repo string) ([]*MasterToken, error) {
 	var tokens []*MasterToken
-	// Construct url to qurey
+	// Construct URL for request
 	reqUrl := createUri("repos", user, repo, "master_tokens")
 
-	// Create new request
-	req, err := http.NewRequest("GET", reqUrl.String(), nil)
-	req.SetBasicAuth(c.Token, "")
+	// Create HTTP request
+	req, err := c.NewRequest("GET", reqUrl.String(), nil)
 	if err != nil {
 		return tokens, err
 	}
@@ -41,7 +51,7 @@ func (c *Client) ListMasterTokens(user, repo string) ([]*MasterToken, error) {
 	//
 	resp, err := c.do(req, http.StatusOK, &tokens)
 	if err != nil {
-		log.Println(resp.StatusCode)
+		fmt.Printf("packagecloud: Error bad response code: %s", resp.StatusCode)
 		return tokens, err
 	}
 	return tokens, nil
@@ -52,11 +62,37 @@ func (c *Client) ListMasterTokens(user, repo string) ([]*MasterToken, error) {
 // The strings user, repo and name are required.
 func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, error) {
 	var token MasterToken
+	// Construct URL for request
+	reqUrl := createUri("repos", user, repo, "master_tokens")
+
+	// create json body
+	data, err := json.Marshal(&MasterTokenRequest{
+		MasterToken: NewMasterToken{
+			Name: name,
+		},
+	})
+	fmt.Println(string(data))
+	if err != nil {
+		fmt.Printf("packagecloud: Error marshalling body data: %s\n", err.Error())
+		return token, err
+	}
+
+	// Create HTTP request
+	req, err := c.NewRequest("POST", reqUrl.String(), bytes.NewReader(data))
+	if err != nil {
+		return token, err
+	}
+	// Do request
+	resp, err := c.do(req, http.StatusCreated, &token)
+	if err != nil {
+		fmt.Printf("packagecloud: Error bad response code: %d\n", resp.StatusCode)
+		return token, err
+	}
 	return token, nil
 }
 
 // DestroyMasterToken removes the master token by using the Paths.Self
 // field in the MasterToken struct.
 func (c *Client) DestroyMasterToken(user, repo, tokenPath string) error {
-	return nil
+	return errors.New("packagecloud: DestroyMasterToken not implemented")
 }
