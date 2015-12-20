@@ -28,7 +28,15 @@ func main() {
 		return
 	}
 
-	fmt.Println("New Token:")
-	fmt.Printf("Token: %s\tValue: %s\tURI: %s\n", newMasterToken.Name, newMasterToken.Value, newMasterToken.Paths.Self)
+	fmt.Println("New Master Token:")
+	fmt.Printf("Token: %s\tValue: %s\tURI: %s\n\n", newMasterToken.Name, newMasterToken.Value, newMasterToken.Paths.Self)
+
+	newReadToken, err := client.CreateReadToken(os.Args[1], os.Args[2], newMasterToken.Paths.Self, "testreader")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("New Read Only Token:")
+	fmt.Printf("Token: %s\tValue: %s\n\n", newReadToken.Name, newReadToken.Value)
 
 }

@@ -6,7 +6,6 @@ package packagecloud
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -101,7 +100,7 @@ func (c *Client) DestroyMasterToken(user, repo, tokenPath string) error {
 		return err
 	}
 	// Do request
-	resp, err := c.do(req, http.StatusNoContent, &token)
+	resp, err := c.do(req, http.StatusNoContent, nil)
 	if err != nil {
 		fmt.Printf("packagecloud: Error bad response code: %d\n", resp.StatusCode)
 		return err

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 )
@@ -49,6 +50,9 @@ func (c *Client) do(req *http.Request, status int, v interface{}) (*http.Respons
 	}
 
 	defer resp.Body.Close()
+
+	dump, _ := httputil.DumpResponse(resp, true)
+	fmt.Print(string(dump))
 
 	// check status code is what is expected
 	if resp.StatusCode != status {
