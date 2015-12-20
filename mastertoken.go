@@ -94,5 +94,17 @@ func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, error)
 // DestroyMasterToken removes the master token by using the Paths.Self
 // field in the MasterToken struct.
 func (c *Client) DestroyMasterToken(user, repo, tokenPath string) error {
-	return errors.New("packagecloud: DestroyMasterToken not implemented")
+	// Create HTTP request
+	reqUrl := fmt.Sprintf("%s/%s", BaseURL, tokenPath)
+	req, err := c.NewRequest("DELETE", reqUrl, nil)
+	if err != nil {
+		return err
+	}
+	// Do request
+	resp, err := c.do(req, http.StatusNoContent, &token)
+	if err != nil {
+		fmt.Printf("packagecloud: Error bad response code: %d\n", resp.StatusCode)
+		return err
+	}
+	return nil
 }
