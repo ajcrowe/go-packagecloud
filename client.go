@@ -30,11 +30,20 @@ func NewClient(token string) (*Client, error) {
 			return nil, errors.New("PACKAGECLOUD_TOKEN unset")
 		}
 	}
+
+	// create our client struct
 	httpClient := http.DefaultClient
-	return &Client{
+	client := &Client{
 		Token:  token,
 		client: httpClient,
-	}, nil
+	}
+
+	// load package distribution information
+	_, err := client.loadPackageDistributions()
+	if err != nil {
+		return client, err
+	}
+	return client, nil
 }
 
 // wrapper function for http.NewRequest to add access token and custom mimetype

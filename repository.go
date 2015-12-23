@@ -112,6 +112,7 @@ func (c *Client) GetRepository(user, name string) (Repository, *http.Response, e
 	// Create HTTP request
 	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
 	if err != nil {
+		return repo, nil, err
 	}
 
 	// Do request
@@ -142,7 +143,6 @@ func (c *Client) CreateRepository(user, name string, private bool) (Repository, 
 		Name:    name,
 		Private: private,
 	})
-
 	if err != nil {
 		return repo, nil, err
 	}
