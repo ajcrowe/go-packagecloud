@@ -6,8 +6,10 @@ package packagecloud
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type MasterToken struct {
@@ -22,88 +24,120 @@ type MasterToken struct {
 
 	// path[self] the uri including the id of the master token
 	// this is required when deleting a token
-	Paths struct {
-		Self string `json:"self,omitempty"`
-	} `json:"paths,omitempty"`
+	Paths MasterTokenPath `json:"paths,omitempty"`
 }
 
-type MasterTokenRequest struct {
-	MasterToken NewMasterToken `json:"master_token"`
+type MasterTokenPath struct {
+	Self string `json:"self,omitempty"`
 }
 
-type NewMasterToken struct {
+type MasterTokens []MasterToken
+
+func (tokens MasterTokens) GetTokenByName(name string) (*MasterToken, error) {
+	for _, token := range tokens {
+		if token.Name == name {
+			return &token, nil
+		}
+	}
+	return nil, errors.New("packagecloud: master token not found")
+}
+
+type newMasterToken struct {
 	Name string `json:"name"`
 }
 
+type newMasterTokenRequest struct {
+	MasterToken newMasterToken `json:"master_token"`
+}
+
+// MasterTokenResp represents the response when creating a new MasterToken.
+type masterTokenResp struct {
+	Id           int       `json:"id"`
+	RepositoryId int       `json:"repository_id"`
+	Name         string    `json:"name"`
+	Value        string    `json:"value"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// parse() returns a properly formed MasterToken struct with
+// expected paths[self] attribute
+func (mt masterTokenResp) parse(user, repo string) MasterToken {
+	return MasterToken{
+		Name:  mt.Name,
+		Value: mt.Value,
+		Paths: MasterTokenPath{
+			Self: fmt.Sprintf("/api/v1/repos/%s/%s/master_tokens/%d", user, repo, mt.Id),
+		},
+	}
+}
+
 // ListMasterTokens returns a slice of pointer to MasterToken structs
-func (c *Client) ListMasterTokens(user, repo string) ([]*MasterToken, error) {
-	var tokens []*MasterToken
+func (c *Client) ListMasterTokens(user, repo string) (MasterTokens, *http.Response, error) {
+	var tokens MasterTokens
 	// Construct URL for request
 	reqUrl := createUri("repos", user, repo, "master_tokens")
 
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl.String(), nil)
+	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
 	if err != nil {
-		return tokens, err
+		return tokens, nil, err
 	}
 
-	//
+	// Dd request
 	resp, err := c.do(req, http.StatusOK, &tokens)
 	if err != nil {
-		fmt.Printf("packagecloud: Error bad response code: %s", resp.StatusCode)
-		return tokens, err
+		return tokens, resp, err
 	}
-	return tokens, nil
+	return tokens, resp, nil
 
 }
 
 // CreateMasterToken returns a newly created MasterToken struct
 // The strings user, repo and name are required.
-func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, error) {
+func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.Response, error) {
 	var token MasterToken
 	// Construct URL for request
 	reqUrl := createUri("repos", user, repo, "master_tokens")
 
 	// create json body
-	data, err := json.Marshal(&MasterTokenRequest{
-		MasterToken: NewMasterToken{
+	data, err := json.Marshal(&newMasterTokenRequest{
+		MasterToken: newMasterToken{
 			Name: name,
 		},
 	})
-	fmt.Println(string(data))
 	if err != nil {
-		fmt.Printf("packagecloud: Error marshalling body data: %s\n", err.Error())
-		return token, err
+		return token, nil, err
 	}
 
 	// Create HTTP request
-	req, err := c.NewRequest("POST", reqUrl.String(), bytes.NewReader(data))
+	req, err := c.NewRequest("POST", reqUrl.String(), "", bytes.NewReader(data))
 	if err != nil {
-		return token, err
+		return token, nil, err
 	}
 	// Do request
-	resp, err := c.do(req, http.StatusCreated, &token)
+	var tokenResp masterTokenResp
+	resp, err := c.do(req, http.StatusCreated, &tokenResp)
 	if err != nil {
-		fmt.Printf("packagecloud: Error bad response code: %d\n", resp.StatusCode)
-		return token, err
+		return token, resp, err
 	}
-	return token, nil
+	token = tokenResp.parse(user, repo)
+	return token, resp, nil
 }
 
 // DestroyMasterToken removes the master token by using the Paths.Self
 // field in the MasterToken struct.
-func (c *Client) DestroyMasterToken(user, repo, tokenPath string) error {
+func (c *Client) DestroyMasterToken(user, repo, path string) (*http.Response, error) {
 	// Create HTTP request
-	reqUrl := fmt.Sprintf("%s/%s", BaseURL, tokenPath)
-	req, err := c.NewRequest("DELETE", reqUrl, nil)
+	reqUrl := createUriFromPath(path)
+	req, err := c.NewRequest("DELETE", reqUrl.String(), "", nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Do request
 	resp, err := c.do(req, http.StatusNoContent, nil)
 	if err != nil {
-		fmt.Printf("packagecloud: Error bad response code: %d\n", resp.StatusCode)
-		return err
+		return resp, err
 	}
-	return nil
+	return resp, nil
 }

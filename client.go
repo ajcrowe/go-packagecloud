@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
+	//"net/http/httputil"
 	"net/url"
 	"os"
 )
 
 // Package Cloud API URL
-const BaseURL = "https://packagecloud.io/api/v1"
+const (
+	defaultBaseURL  = "https://packagecloud.io"
+	defaultMimeType = "application/json"
+	apiVersion      = "v1"
+)
 
 type Client struct {
 	Token  string
@@ -33,13 +37,18 @@ func NewClient(token string) (*Client, error) {
 	}, nil
 }
 
-// wrapper function for http.NewRequest to add access token
-func (c *Client) NewRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, urlStr, body)
-	req.SetBasicAuth(c.Token, "")
-	if req.Method == "POST" {
-		req.Header.Set("Content-Type", "application/json")
+// wrapper function for http.NewRequest to add access token and custom mimetype
+func (c *Client) NewRequest(method, urlStr, contentType string, body io.Reader) (*http.Request, error) {
+	// set default contact type if not set
+	if contentType == "" {
+		contentType = defaultMimeType
 	}
+	// get new request
+	req, err := http.NewRequest(method, urlStr, body)
+	// set basic auth username to api token
+	req.SetBasicAuth(c.Token, "")
+	// set content type
+	req.Header.Set("Content-Type", contentType)
 	return req, err
 }
 
@@ -51,12 +60,9 @@ func (c *Client) do(req *http.Request, status int, v interface{}) (*http.Respons
 
 	defer resp.Body.Close()
 
-	dump, _ := httputil.DumpResponse(resp, true)
-	fmt.Print(string(dump))
-
 	// check status code is what is expected
 	if resp.StatusCode != status {
-		return resp, errors.New("Incorrect status code returned")
+		return resp, errors.New("packagecloud: bad status code returned")
 	}
 
 	// decode resp body into struct
@@ -67,7 +73,13 @@ func (c *Client) do(req *http.Request, status int, v interface{}) (*http.Respons
 }
 
 func createUri(section, user, repo, resource string) *url.URL {
-	strUrl := fmt.Sprintf("%s/%s/%s/%s/%s", BaseURL, section, user, repo, resource)
+	strUrl := fmt.Sprintf("%s/api/%s/%s/%s/%s/%s", defaultBaseURL, apiVersion, section, user, repo, resource)
+	reqUrl, _ := url.Parse(strUrl)
+	return reqUrl
+}
+
+func createUriFromPath(path string) *url.URL {
+	strUrl := fmt.Sprintf("%s%s", defaultBaseURL, path)
 	reqUrl, _ := url.Parse(strUrl)
 	return reqUrl
 }

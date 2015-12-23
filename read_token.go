@@ -1,13 +1,17 @@
 package packagecloud
 
 import (
-	//"time"
 	"bytes"
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 )
+
+const (
+	masterTokenRegex = `^/api/v1/repos/\w+/\w+/master_tokens/\d+$`
+)
+
+var masterTokenRegexError = fmt.Errorf("invalid master token url should match %s", masterTokenRegex)
 
 type ReadToken struct {
 	// Unique Id for the read token
@@ -22,56 +26,54 @@ type ReadToken struct {
 
 // ListReadTokens returns a slice of pointers to ReadToken structs which are
 // accociated with the masterToken.
-func (c *Client) ListReadTokens(user, repo, tokenUrl string) ([]*ReadToken, error) {
+func (c *Client) ListReadTokens(user, repo, tokenUrl string) ([]*ReadToken, *http.Response, error) {
 	var tokens []*ReadToken
 	// Construct URL for request
-	matched, _ := regexp.MatchString(`^/api/v1/repos/\w+/\w+/master_tokens/\d+$`, tokenUrl)
+	matched, _ := regexp.MatchString(masterTokenRegex, tokenUrl)
 	if !matched {
-		return tokens, errors.New("Invalid master token URL")
+		return tokens, nil, masterTokenRegexError
 	}
 
 	reqUrl := fmt.Sprint(tokenUrl + "/read_tokens.json")
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl, nil)
+	req, err := c.NewRequest("GET", reqUrl, "", nil)
 	if err != nil {
-		return tokens, err
+		return tokens, nil, err
 	}
 
 	// Do request
 	resp, err := c.do(req, http.StatusOK, &tokens)
 	if err != nil {
-		fmt.Printf("packagecloud: Error bad response code: %s", resp.StatusCode)
-		return tokens, err
+		return tokens, resp, err
 	}
-	return tokens, nil
+	return tokens, resp, nil
 }
 
 // CreateReadToken creates a new read token for the specified master token value.
-func (c *Client) CreateReadToken(user, repo, tokenUrl, name string) (ReadToken, error) {
+func (c *Client) CreateReadToken(user, repo, tokenUrl, name string) (ReadToken, *http.Response, error) {
 	var token ReadToken
-	matched, _ := regexp.MatchString(`^/api/v1/repos/\w+/\w+/master_tokens/\d+$`, tokenUrl)
+	matched, _ := regexp.MatchString(masterTokenRegex, tokenUrl)
 	if !matched {
-		return token, errors.New("Invalid master token URL")
+		return token, nil, masterTokenRegexError
 	}
 	body := []byte(fmt.Sprintf("read_token[name]=%s", name))
 
-	reqUrl := fmt.Sprint(tokenUrl + "/read_tokens.json")
+	reqUrl := createUriFromPath(fmt.Sprint(tokenUrl + "/read_tokens.json"))
 	// Create HTTP request
-	req, err := c.NewRequest("POST", reqUrl, bytes.NewReader(body))
+	req, err := c.NewRequest("POST", reqUrl.String(), "multipart/form-data", bytes.NewReader(body))
 	if err != nil {
-		return token, err
+		return token, nil, err
 	}
 
 	// Do request
 	resp, err := c.do(req, http.StatusCreated, &token)
 	if err != nil {
-		fmt.Printf("packagecloud: Error bad response code: %s", resp.StatusCode)
-		return token, err
+		return token, resp, err
 	}
-	return token, nil
+	return token, resp, nil
 }
 
 // DestroyReadToken deletes the read token with specified id from the master token
-func (c *Client) DestroyReadToken(user, repo, masterToken string, id int) error {
-	return nil
+func (c *Client) DestroyReadToken(user, repo, masterToken string, id int) (*http.Response, error) {
+	return nil, nil
 }
