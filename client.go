@@ -18,11 +18,13 @@ const (
 	apiVersion      = "v1"
 )
 
+// Client struct holding our token and HTTP client
 type Client struct {
 	Token  string
 	client *http.Client
 }
 
+// NewClient returns a Client struct
 func NewClient(token string) (*Client, error) {
 	if token == "" {
 		token = os.Getenv("PACKAGECLOUD_TOKEN")
@@ -46,7 +48,7 @@ func NewClient(token string) (*Client, error) {
 	return client, nil
 }
 
-// wrapper function for http.NewRequest to add access token and custom mimetype
+// NewRequest is a wrapper function for http.NewRequest to add access token and custom mimetype
 func (c *Client) NewRequest(method, urlStr, contentType string, body io.Reader) (*http.Request, error) {
 	// set default contact type if not set
 	if contentType == "" {
@@ -81,14 +83,14 @@ func (c *Client) do(req *http.Request, status int, v interface{}) (*http.Respons
 	return resp, err
 }
 
-func createUri(section, user, repo, resource string) *url.URL {
-	strUrl := fmt.Sprintf("%s/api/%s/%s/%s/%s/%s", defaultBaseURL, apiVersion, section, user, repo, resource)
-	reqUrl, _ := url.Parse(strUrl)
-	return reqUrl
+func createURI(section, user, repo, resource string) *url.URL {
+	strURL := fmt.Sprintf("%s/api/%s/%s/%s/%s/%s", defaultBaseURL, apiVersion, section, user, repo, resource)
+	reqURL, _ := url.Parse(strURL)
+	return reqURL
 }
 
-func createUriFromPath(path string) *url.URL {
-	strUrl := fmt.Sprintf("%s%s", defaultBaseURL, path)
-	reqUrl, _ := url.Parse(strUrl)
-	return reqUrl
+func createURIFromPath(path string) *url.URL {
+	strURL := fmt.Sprintf("%s%s", defaultBaseURL, path)
+	reqURL, _ := url.Parse(strURL)
+	return reqURL
 }

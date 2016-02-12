@@ -11,11 +11,12 @@ const (
 	masterTokenRegex = `^/api/v1/repos/\w+/\w+/master_tokens/\d+$`
 )
 
-var masterTokenRegexError = fmt.Errorf("invalid master token url should match %s", masterTokenRegex)
+var errMasterTokenRegex = fmt.Errorf("invalid master token url should match %s", masterTokenRegex)
 
+// ReadToken struct see https://packagecloud.io/docs/api#resource_read_tokens
 type ReadToken struct {
-	// Unique Id for the read token
-	Id int `json:"id"`
+	// Unique ID for the read token
+	ID int `json:"id"`
 
 	// Name of the read token
 	Name string `json:"name"`
@@ -26,17 +27,17 @@ type ReadToken struct {
 
 // ListReadTokens returns a slice of pointers to ReadToken structs which are
 // accociated with the masterToken.
-func (c *Client) ListReadTokens(user, repo, tokenUrl string) ([]*ReadToken, *http.Response, error) {
+func (c *Client) ListReadTokens(user, repo, tokenURL string) ([]*ReadToken, *http.Response, error) {
 	var tokens []*ReadToken
 	// Construct URL for request
-	matched, _ := regexp.MatchString(masterTokenRegex, tokenUrl)
+	matched, _ := regexp.MatchString(masterTokenRegex, tokenURL)
 	if !matched {
-		return tokens, nil, masterTokenRegexError
+		return tokens, nil, errMasterTokenRegex
 	}
 
-	reqUrl := fmt.Sprint(tokenUrl + "/read_tokens.json")
+	reqURL := fmt.Sprint(tokenURL + "/read_tokens.json")
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl, "", nil)
+	req, err := c.NewRequest("GET", reqURL, "", nil)
 	if err != nil {
 		return tokens, nil, err
 	}
@@ -50,17 +51,17 @@ func (c *Client) ListReadTokens(user, repo, tokenUrl string) ([]*ReadToken, *htt
 }
 
 // CreateReadToken creates a new read token for the specified master token value.
-func (c *Client) CreateReadToken(user, repo, tokenUrl, name string) (ReadToken, *http.Response, error) {
+func (c *Client) CreateReadToken(user, repo, tokenURL, name string) (ReadToken, *http.Response, error) {
 	var token ReadToken
-	matched, _ := regexp.MatchString(masterTokenRegex, tokenUrl)
+	matched, _ := regexp.MatchString(masterTokenRegex, tokenURL)
 	if !matched {
-		return token, nil, masterTokenRegexError
+		return token, nil, errMasterTokenRegex
 	}
 	body := []byte(fmt.Sprintf("read_token[name]=%s", name))
 
-	reqUrl := createUriFromPath(fmt.Sprint(tokenUrl + "/read_tokens.json"))
+	reqURL := createUriFromPath(fmt.Sprint(tokenURL + "/read_tokens.json"))
 	// Create HTTP request
-	req, err := c.NewRequest("POST", reqUrl.String(), "multipart/form-data", bytes.NewReader(body))
+	req, err := c.NewRequest("POST", reqURL.String(), "multipart/form-data", bytes.NewReader(body))
 	if err != nil {
 		return token, nil, err
 	}

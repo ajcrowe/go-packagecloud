@@ -5,17 +5,19 @@ import (
 	"net/http"
 )
 
+// License struct see https://packagecloud.io/docs/api#resource_licenses
 type License struct {
 	License   string `json:"license"`
 	Signature string `json:"signature"`
 }
 
-func (c *Client) GetLicense(name string) (License, *http.Response, error) {
+// GetLicense returns a License struct for the specified license key
+func (c *Client) GetLicense(key string) (License, *http.Response, error) {
 	var license License
-	reqUrl := createUriFromPath(fmt.Sprintf("/api/%s/licenses/%s/license.json", apiVersion, name))
+	reqURL := createURIFromPath(fmt.Sprintf("/api/%s/licenses/%s/license.json", apiVersion, key))
 
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
+	req, err := c.NewRequest("GET", reqURL.String(), "", nil)
 	if err != nil {
 	}
 

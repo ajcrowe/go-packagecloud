@@ -1,7 +1,7 @@
+package packagecloud
+
 // Master Token API Methods
 // https://packagecloud.io/docs/api#resource_master_tokens
-//
-package packagecloud
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// MasterToken struct see https://packagecloud.io/docs/api#resource_master_tokens
 type MasterToken struct {
 	// User defined name for this token
 	Name string `json:"name"`
@@ -27,12 +28,15 @@ type MasterToken struct {
 	Paths MasterTokenPath `json:"paths,omitempty"`
 }
 
+// MasterTokenPath represents the returned 'paths' hash
 type MasterTokenPath struct {
 	Self string `json:"self,omitempty"`
 }
 
+// MasterTokens is a slice of MasterToken structs
 type MasterTokens []MasterToken
 
+// GetTokenByName returns the first matching master token from the slice
 func (tokens MasterTokens) GetTokenByName(name string) (*MasterToken, error) {
 	for _, token := range tokens {
 		if token.Name == name {
@@ -52,34 +56,34 @@ type newMasterTokenRequest struct {
 
 // MasterTokenResp represents the response when creating a new MasterToken.
 type masterTokenResp struct {
-	Id           int       `json:"id"`
-	RepositoryId int       `json:"repository_id"`
+	ID           int       `json:"id"`
+	RepositoryID int       `json:"repository_id"`
 	Name         string    `json:"name"`
 	Value        string    `json:"value"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// parse() returns a properly formed MasterToken struct with
+// parse returns a properly formed MasterToken struct with
 // expected paths[self] attribute
 func (mt masterTokenResp) parse(user, repo string) MasterToken {
 	return MasterToken{
 		Name:  mt.Name,
 		Value: mt.Value,
 		Paths: MasterTokenPath{
-			Self: fmt.Sprintf("/api/v1/repos/%s/%s/master_tokens/%d", user, repo, mt.Id),
+			Self: fmt.Sprintf("/api/v1/repos/%s/%s/master_tokens/%d", user, repo, mt.ID),
 		},
 	}
 }
 
-// ListMasterTokens returns a slice of pointer to MasterToken structs
+// ListMasterTokens returns a slice of pointers to MasterToken structs
 func (c *Client) ListMasterTokens(user, repo string) (MasterTokens, *http.Response, error) {
 	var tokens MasterTokens
 	// Construct URL for request
-	reqUrl := createUri("repos", user, repo, "master_tokens")
+	reqURL := createUri("repos", user, repo, "master_tokens")
 
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
+	req, err := c.NewRequest("GET", reqURL.String(), "", nil)
 	if err != nil {
 		return tokens, nil, err
 	}
@@ -98,7 +102,7 @@ func (c *Client) ListMasterTokens(user, repo string) (MasterTokens, *http.Respon
 func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.Response, error) {
 	var token MasterToken
 	// Construct URL for request
-	reqUrl := createUri("repos", user, repo, "master_tokens")
+	reqURL := createUri("repos", user, repo, "master_tokens")
 
 	// create json body
 	data, err := json.Marshal(&newMasterTokenRequest{
@@ -111,7 +115,7 @@ func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.
 	}
 
 	// Create HTTP request
-	req, err := c.NewRequest("POST", reqUrl.String(), "", bytes.NewReader(data))
+	req, err := c.NewRequest("POST", reqURL.String(), "", bytes.NewReader(data))
 	if err != nil {
 		return token, nil, err
 	}
@@ -129,8 +133,8 @@ func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.
 // field in the MasterToken struct.
 func (c *Client) DestroyMasterToken(user, repo, path string) (*http.Response, error) {
 	// Create HTTP request
-	reqUrl := createUriFromPath(path)
-	req, err := c.NewRequest("DELETE", reqUrl.String(), "", nil)
+	reqURL := createUriFromPath(path)
+	req, err := c.NewRequest("DELETE", reqURL.String(), "", nil)
 	if err != nil {
 		return nil, err
 	}

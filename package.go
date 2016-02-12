@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// PackageFragment struct
 type PackageFragment struct {
 	Name              string    `json:"name"`
 	CreatedAt         time.Time `json:"crated_at"`
@@ -19,6 +20,7 @@ type PackageFragment struct {
 	PackageHTMLURL    string    `json:"package_html_url"`
 }
 
+// PackageDetails struct
 type PackageDetails struct {
 	Name           string    `json:"name"`
 	DistroVersion  string    `json:"distro_version"`
@@ -45,6 +47,7 @@ type PackageDetails struct {
 	SelfURL        string    `json:"self_url"`
 }
 
+// PackageVersion struct
 type PackageVersion struct {
 	Name              string `json:"name"`
 	VersionsCount     int    `json:"versions_count"`

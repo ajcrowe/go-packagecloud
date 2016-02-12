@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	repoUri = fmt.Sprintf("/api/%s/repos", apiVersion)
+	repoURI = fmt.Sprintf("/api/%s/repos", apiVersion)
 )
 
 // Repository struct this is as yet undocumented see here for current docs
@@ -40,13 +40,13 @@ type Repository struct {
 		Self              string `json:"self"`
 	} `json:"paths"`
 
-	// Url to install script to setup a host to use this repository
-	Urls struct {
+	// URL to install script to setup a host to use this repository
+	URLs struct {
 		InstallScript string `json:"install_script"`
 	} `json:"urls"`
 }
 
-// Respoitory item returned when querying all user accessible repos
+// RepositoryListItem returned when querying all user accessible repos
 // this is documented here https://packagecloud.io/docs/api#object_Repository
 type RepositoryListItem struct {
 	//User defined name for this repository
@@ -73,7 +73,7 @@ type RepositoryListItem struct {
 	FQName string `json:"fqname"`
 }
 
-// Repository list struct
+// RepositoryList struct
 type RepositoryList []RepositoryListItem
 
 // GetRepoListItemByName retruns a specific RepositoryListItem struct by name from an existing RepositoryList
@@ -89,10 +89,10 @@ func (repos RepositoryList) GetRepoListItemByName(name string) (*RepositoryListI
 // ListRepositories returns a slice of ResositoryListItem structs
 func (c *Client) ListRepositories() (RepositoryList, *http.Response, error) {
 	var repos RepositoryList
-	reqUrl := createUriFromPath(repoUri)
+	reqURL := createURIFromPath(repoURI)
 
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
+	req, err := c.NewRequest("GET", reqURL.String(), "", nil)
 	if err != nil {
 		return repos, nil, err
 	}
@@ -105,12 +105,14 @@ func (c *Client) ListRepositories() (RepositoryList, *http.Response, error) {
 	return repos, resp, nil
 }
 
+// GetRepository returns a Repository struct for the given user & name combination
+// if it exists.
 func (c *Client) GetRepository(user, name string) (Repository, *http.Response, error) {
 	var repo Repository
-	reqUrl := createUriFromPath(fmt.Sprintf("%s/%s/%s", repoUri, user, name))
+	reqURL := createURIFromPath(fmt.Sprintf("%s/%s/%s", repoURI, user, name))
 
 	// Create HTTP request
-	req, err := c.NewRequest("GET", reqUrl.String(), "", nil)
+	req, err := c.NewRequest("GET", reqURL.String(), "", nil)
 	if err != nil {
 		return repo, nil, err
 	}
@@ -130,14 +132,16 @@ type newRepositoryRequest struct {
 	Private bool   `json:"private"`
 }
 
-// newRepositoryResponse provides the struct to marshall the reponse to a new repository request
+// newRepositoryResponse provides the struct to marshall the response to a new repository request
 type newRepositoryResponse struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
+// CreateRepository create a new repository with the given name and private setting under
+// the specified user.
 func (c *Client) CreateRepository(user, name string, private bool) (Repository, *http.Response, error) {
 	var repo Repository
-	reqUrl := createUriFromPath(repoUri)
+	reqURL := createURIFromPath(repoURI)
 
 	data, err := json.Marshal(&newRepositoryRequest{
 		Name:    name,
@@ -148,7 +152,7 @@ func (c *Client) CreateRepository(user, name string, private bool) (Repository, 
 	}
 
 	// Create HTTP request
-	req, err := c.NewRequest("POST", reqUrl.String(), "", bytes.NewReader(data))
+	req, err := c.NewRequest("POST", reqURL.String(), "", bytes.NewReader(data))
 	if err != nil {
 		return repo, nil, err
 	}
@@ -171,7 +175,7 @@ func (c *Client) CreateRepository(user, name string, private bool) (Repository, 
 
 }
 
-// Not Implemented in API Yet
+// DeleteRepository is not implemented in the API Yet
 func (c *Client) DeleteRepository(name string) error {
 	return errors.New("packagecloud: DeleteRepository() not implemented in API")
 }
