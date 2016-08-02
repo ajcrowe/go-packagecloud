@@ -80,7 +80,7 @@ func (mt masterTokenResp) parse(user, repo string) MasterToken {
 func (c *Client) ListMasterTokens(user, repo string) (MasterTokens, *http.Response, error) {
 	var tokens MasterTokens
 	// Construct URL for request
-	reqURL := createUri("repos", user, repo, "master_tokens")
+	reqURL := createURI("repos", user, repo, "master_tokens")
 
 	// Create HTTP request
 	req, err := c.NewRequest("GET", reqURL.String(), "", nil)
@@ -102,7 +102,7 @@ func (c *Client) ListMasterTokens(user, repo string) (MasterTokens, *http.Respon
 func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.Response, error) {
 	var token MasterToken
 	// Construct URL for request
-	reqURL := createUri("repos", user, repo, "master_tokens")
+	reqURL := createURI("repos", user, repo, "master_tokens")
 
 	// create json body
 	data, err := json.Marshal(&newMasterTokenRequest{
@@ -133,7 +133,7 @@ func (c *Client) CreateMasterToken(user, repo, name string) (MasterToken, *http.
 // field in the MasterToken struct.
 func (c *Client) DestroyMasterToken(user, repo, path string) (*http.Response, error) {
 	// Create HTTP request
-	reqURL := createUriFromPath(path)
+	reqURL := createURIFromPath(path)
 	req, err := c.NewRequest("DELETE", reqURL.String(), "", nil)
 	if err != nil {
 		return nil, err

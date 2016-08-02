@@ -59,7 +59,7 @@ func (c *Client) CreateReadToken(user, repo, tokenURL, name string) (ReadToken, 
 	}
 	body := []byte(fmt.Sprintf("read_token[name]=%s", name))
 
-	reqURL := createUriFromPath(fmt.Sprint(tokenURL + "/read_tokens.json"))
+	reqURL := createURIFromPath(fmt.Sprint(tokenURL + "/read_tokens.json"))
 	// Create HTTP request
 	req, err := c.NewRequest("POST", reqURL.String(), "multipart/form-data", bytes.NewReader(body))
 	if err != nil {
