@@ -20,7 +20,7 @@ func main() {
 
 	for _, distro := range distros["deb"] {
 		for _, version := range distro.Versions {
-			fmt.Printf("id: %d\tname: %s/%s\n", version.Id, distro.IndexName, version.IndexName)
+			fmt.Printf("id: %d\tname: %s/%s\n", version.ID, distro.IndexName, version.IndexName)
 		}
 	}
 }
